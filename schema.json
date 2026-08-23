@@ -1,44 +1,59 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
 		"$schema": {
 			"type": "string",
 			"format": "uri",
-			"description": "Schema URL used by editors for validation and autocomplete."
+			"description": "Schema URL used by editors for validation and autocomplete.",
+			"examples": [
+				"https://unpkg.com/@ispoofermotion/core@4.1.0/schema.json"
+			]
 		},
 		"layerZIndex": {
 			"type": "number",
 			"description": "Base z-index applied to non-default layers (modals, tooltips, etc.). Defaults to 100.",
-			"default": 100
+			"default": 100,
+			"examples": [
+				100,
+				200,
+				1000
+			]
 		},
 		"layerMode": {
 			"type": "string",
-			"enum": ["root", "viewport"],
-			"description": "Position non-default layers relative to the app root or viewport. Defaults to root.",
+			"enum": [
+				"root",
+				"viewport"
+			],
+			"description": "Position non-default layers relative to the app root or browser viewport. Defaults to root.",
 			"default": "root"
 		},
 		"showDevTools": {
 			"type": "boolean",
-			"description": "Automatically mount the dockable DevTools UI over your app. Defaults to false.",
+			"description": "Lazy-load and mount the built-in dockable DevTools inspector. Defaults to false.",
 			"default": false
 		},
 		"strictIds": {
 			"type": "boolean",
-			"description": "Throw when duplicate logical widget IDs are produced in one frame. Defaults to false.",
+			"description": "Throw when duplicate logical widget IDs are produced in one frame. Recommended for development. Defaults to false.",
 			"default": false
 		},
 		"strictRuntime": {
 			"type": "boolean",
-			"description": "Turn runtime invariant diagnostics into frame-aborting coded errors. Defaults to false.",
+			"description": "Turn runtime invariant diagnostics into frame-aborting coded errors. Recommended for development and tests. Defaults to false.",
 			"default": false
 		},
 		"stateRetentionFrames": {
 			"type": "integer",
 			"minimum": 0,
-			"description": "Committed frames that absent widget state and memo entries remain in memory before cleanup. Defaults to 1.",
-			"default": 1
+			"description": "Committed frames that absent widget state and memo entries remain in memory before cleanup. Must be a non-negative JavaScript safe integer. Defaults to 1.",
+			"default": 1,
+			"maximum": 9007199254740991
 		}
 	},
-	"additionalProperties": false
+	"additionalProperties": false,
+	"$id": "https://unpkg.com/@ispoofermotion/core/schema.json",
+	"title": "ISM Core configuration",
+	"description": "Editor schema for ism.config.json. Pass these values to createApp; Core does not load this file automatically."
 }

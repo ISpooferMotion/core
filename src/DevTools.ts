@@ -1,4 +1,4 @@
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { createElement, useEffect, useRef, useState } from "react";
 import { installDevToolsProtocol } from "./devtoolsProtocol";
 import {
@@ -6,10 +6,6 @@ import {
 	serializeInspectorTree,
 } from "./inspectorSerializer";
 import type { Runtime } from "./runtime";
-
-if (typeof window !== "undefined") {
-	installDevToolsProtocol();
-}
 
 type Tab = "Elements" | "State";
 const TABS: readonly Tab[] = ["Elements", "State"];
@@ -61,6 +57,42 @@ function getInspectorText(runtime: Runtime, tab: Tab): string {
 	return cache.state || "(empty)";
 }
 
+function DevToolsIcon(): ReactNode {
+	return createElement(
+		"svg",
+		{
+			viewBox: "0 0 16 16",
+			width: 13,
+			height: 13,
+			fill: "none",
+			stroke: "currentColor",
+			strokeWidth: 1.35,
+			strokeLinecap: "round",
+			strokeLinejoin: "round",
+			"aria-hidden": "true",
+		},
+		createElement("path", { d: "M2.5 3.5h11v9h-11z" }),
+		createElement("path", { d: "m5 6 2 2-2 2M8.5 10h2.5" }),
+	);
+}
+
+function CloseIcon(): ReactNode {
+	return createElement(
+		"svg",
+		{
+			viewBox: "0 0 16 16",
+			width: 13,
+			height: 13,
+			fill: "none",
+			stroke: "currentColor",
+			strokeWidth: 1.5,
+			strokeLinecap: "round",
+			"aria-hidden": "true",
+		},
+		createElement("path", { d: "m4.5 4.5 7 7m0-7-7 7" }),
+	);
+}
+
 export interface DevToolsOverlayProps {
 	runtime: Runtime;
 	/** Stacking level supplied by the app rather than hard-coded by DevTools. */
@@ -80,6 +112,10 @@ export function DevToolsOverlay({
 	const panelId = `${runtimeId}-devtools-panel`;
 	const tabId = (tab: Tab) => `${runtimeId}-devtools-tab-${tab}`;
 	const inspectorText = expanded ? getInspectorText(runtime, activeTab) : "";
+
+	useEffect(() => {
+		installDevToolsProtocol();
+	}, []);
 
 	useEffect(() => {
 		if (!expanded && restoreOpenerFocus.current) {
@@ -106,23 +142,30 @@ export function DevToolsOverlay({
 				type: "button" as const,
 				"aria-label": "Open DevTools",
 				onClick: () => setExpanded(true),
+				className: "ism-devtools-button",
 				style: {
 					position: "fixed",
-					bottom: "8px",
-					left: "8px",
-					backgroundColor: "rgba(0, 0, 0, 0.8)",
-					color: "white",
-					fontSize: "10px",
-					fontFamily: "monospace",
-					padding: "6px 12px",
-					borderRadius: "4px",
-					border: "1px solid rgba(255, 255, 255, 0.2)",
+					bottom: "10px",
+					left: "10px",
+					display: "inline-flex",
+					alignItems: "center",
+					gap: "6px",
+					backgroundColor: "#0a0a0a",
+					color: "#ededed",
+					fontSize: "11px",
+					fontFamily:
+						'Geist, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+					fontWeight: 500,
+					padding: "6px 9px",
+					borderRadius: "7px",
+					border: "1px solid #2e2e2e",
 					zIndex,
 					cursor: "pointer",
-					boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
+					boxShadow: "0 8px 24px rgba(0, 0, 0, 0.28)",
 				},
 			},
-			"🛠 DevTools",
+			createElement(DevToolsIcon),
+			"DevTools",
 		);
 	}
 
@@ -152,6 +195,7 @@ export function DevToolsOverlay({
 			role: "region",
 			"aria-label": "ISM DevTools",
 			"data-ism-devtools-runtime": runtimeId,
+			className: "ism-devtools-panel",
 			onKeyDown: (event: ReactKeyboardEvent<HTMLDivElement>) => {
 				if (event.key === "Escape") {
 					event.preventDefault();
@@ -164,15 +208,16 @@ export function DevToolsOverlay({
 				left: 0,
 				right: 0,
 				height: "35vh",
-				backgroundColor: "rgba(30, 30, 30, 0.98)",
-				color: "white",
+				backgroundColor: "#0a0a0a",
+				color: "#ededed",
 				fontSize: "12px",
-				fontFamily: "monospace",
-				borderTop: "1px solid rgba(255, 255, 255, 0.2)",
+				fontFamily:
+					'"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
+				borderTop: "1px solid #2e2e2e",
 				zIndex,
 				display: "flex",
 				flexDirection: "column",
-				boxShadow: "0 -4px 20px rgba(0,0,0,0.5)",
+				boxShadow: "0 -16px 48px rgba(0, 0, 0, 0.3)",
 			},
 		},
 		createElement(
@@ -182,9 +227,10 @@ export function DevToolsOverlay({
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					backgroundColor: "rgba(20, 20, 20, 1)",
-					borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+					backgroundColor: "#0a0a0a",
+					borderBottom: "1px solid #242424",
 					padding: "0 8px",
+					minHeight: "34px",
 				},
 			},
 			createElement(
@@ -192,7 +238,7 @@ export function DevToolsOverlay({
 				{
 					role: "tablist",
 					"aria-label": "DevTools views",
-					style: { display: "flex", gap: "2px" },
+					style: { display: "flex", gap: "2px", alignSelf: "stretch" },
 				},
 				TABS.map((tab) =>
 					createElement(
@@ -208,17 +254,19 @@ export function DevToolsOverlay({
 							onClick: () => setActiveTab(tab),
 							onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) =>
 								handleTabKeyDown(event, tab),
+							className: "ism-devtools-tab",
 							style: {
-								color: "inherit",
-								padding: "6px 12px",
+								color: activeTab === tab ? "#ededed" : "#8f8f8f",
+								padding: "7px 10px 6px",
 								cursor: "pointer",
-								backgroundColor:
-									activeTab === tab ? "rgba(255,255,255,0.1)" : "transparent",
+								backgroundColor: "transparent",
+								border: "none",
 								borderBottom:
 									activeTab === tab
-										? "2px solid #0078d4"
-										: "2px solid transparent",
+										? "1px solid #ededed"
+										: "1px solid transparent",
 								userSelect: "none",
+								font: "inherit",
 							},
 						},
 						tab,
@@ -231,17 +279,22 @@ export function DevToolsOverlay({
 					type: "button",
 					onClick: close,
 					"aria-label": "Close DevTools",
+					className: "ism-devtools-button ism-devtools-close",
 					style: {
-						color: "inherit",
+						display: "grid",
+						placeItems: "center",
+						width: "26px",
+						height: "26px",
+						color: "#a1a1a1",
 						backgroundColor: "transparent",
-						border: "1px solid rgba(255, 255, 255, 0.35)",
+						border: "1px solid transparent",
+						borderRadius: "6px",
 						cursor: "pointer",
-						padding: "4px 8px",
-						fontSize: "14px",
+						padding: 0,
 						userSelect: "none",
 					},
 				},
-				"✖",
+				createElement(CloseIcon),
 			),
 		),
 		createElement(
@@ -254,7 +307,7 @@ export function DevToolsOverlay({
 					flex: 1,
 					overflow: "hidden",
 					position: "relative",
-					padding: "8px",
+					padding: "10px 12px",
 				},
 			},
 			createElement(
@@ -264,8 +317,9 @@ export function DevToolsOverlay({
 					"pre",
 					{
 						style: {
-							color: activeTab === "Elements" ? "#51cf66" : "#ff6b6b",
+							color: "#c7c7c7",
 							margin: 0,
+							lineHeight: 1.55,
 						},
 					},
 					inspectorText,

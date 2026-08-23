@@ -645,6 +645,7 @@ export class Runtime {
 			typeof updater === "function"
 				? (updater as (previous: unknown) => unknown)(current)
 				: updater;
+		if (Object.is(current, next)) return;
 		this.stateStore.set(id, next);
 		this.stateRevision++;
 

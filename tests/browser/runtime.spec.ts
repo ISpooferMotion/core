@@ -163,7 +163,7 @@ test("DevTools tabs follow browser focus and keyboard navigation", async ({
 	).toBeVisible();
 });
 
-test("widget render retry preserves committed runtime state", async ({
+test("widget render retry reports a failed attempt and preserves committed state", async ({
 	page,
 }) => {
 	await openScenario(page, "error-recovery");
@@ -172,12 +172,32 @@ test("widget render retry preserves committed runtime state", async ({
 	await expect(counter).toContainText("Recoverable counter: 1");
 
 	await page.evaluate(() => window.__ismFixture?.triggerError?.());
-	await expect(page.getByRole("alert")).toContainText(
-		"browser fixture render failure",
-	);
+	const fallback = page.locator("[data-ism-error]");
+	await expect(page.getByRole("alert")).toBeVisible();
+	await expect(fallback).toContainText("browser fixture render failure");
+
+	const retry = page.getByRole("button", { name: "Try again" });
+	await retry.focus();
+	await page.keyboard.press("Enter");
+	await expect(fallback).toHaveAttribute("data-ism-retry-state", "failed");
+	await expect(fallback).toContainText("Retry failed");
+	await expect(retry).toBeFocused();
+
 	await page.evaluate(() => window.__ismFixture?.recover?.());
 	await page.getByRole("button", { name: "Try again" }).click();
 	await expect(counter).toContainText("Recoverable counter: 1");
+});
+
+test("browser defaults do not expose render error details", async ({
+	page,
+}) => {
+	await openScenario(page, "error-private");
+	await page.evaluate(() => window.__ismFixture?.triggerError?.());
+	const fallback = page.locator("[data-ism-error]");
+	await expect(fallback).toBeVisible();
+	await expect(fallback).not.toContainText("browser fixture render failure");
+	await expect(fallback).toContainText("ISM_WIDGET_RENDER_ERROR");
+	await expect(fallback.locator("details")).toHaveCount(0);
 });
 
 test("StrictMode does not duplicate native state updates", async ({ page }) => {

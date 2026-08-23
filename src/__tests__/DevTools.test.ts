@@ -2,17 +2,27 @@ import { act, createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../createApp";
 import { defineWidget } from "../defineWidget";
+import {
+	DEVTOOLS_PROTOCOL_SYMBOL,
+	getDevToolsProtocol,
+} from "../devtoolsProtocol";
 import { mountedRuntimes } from "../runtime";
 import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
 
 let container: HTMLDivElement;
 beforeEach(() => {
+	delete (globalThis as unknown as Record<PropertyKey, unknown>)[
+		DEVTOOLS_PROTOCOL_SYMBOL
+	];
 	container = document.createElement("div");
 	document.body.appendChild(container);
 });
 afterEach(() => {
 	cleanupTestRoots();
 	expect(mountedRuntimes.size).toBe(0);
+	delete (globalThis as unknown as Record<PropertyKey, unknown>)[
+		DEVTOOLS_PROTOCOL_SYMBOL
+	];
 	document.body.replaceChildren();
 });
 
@@ -42,6 +52,23 @@ async function click(el: Element | null) {
 }
 
 describe("DevTools", () => {
+	it("installs the inspector protocol only when the lazy overlay actually mounts", async () => {
+		const PlainApp = createApp(() => Button("Plain"));
+		const root = createTestRoot(container);
+		await act(async () => {
+			root.render(createElement(PlainApp));
+		});
+		expect(getDevToolsProtocol()).toBeUndefined();
+
+		act(() => root.unmount());
+		const DevApp = createApp(() => Button("Inspected"), { showDevTools: true });
+		const devRoot = createTestRoot(container);
+		await act(async () => {
+			devRoot.render(createElement(DevApp));
+			await Promise.resolve();
+		});
+		expect(getDevToolsProtocol()).toBeDefined();
+	});
 	it("renders collapsed by default, showing only the open button", async () => {
 		const App = createApp(
 			() => {

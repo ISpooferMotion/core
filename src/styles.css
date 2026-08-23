@@ -5,15 +5,117 @@
 
 /* Shared widget root */
 .ism-widget {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* Real containing block created by createApp for root-relative layers. */
 [data-ism-layer-host] {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* Error fallback root */
 [data-ism-error] {
-	box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.ism-error-action:focus-visible,
+.ism-error-details-summary:focus-visible {
+  outline: 2px solid #ededed;
+  outline-offset: 2px;
+}
+
+.ism-error-action-primary {
+  background: #ededed;
+  border: 1px solid #ededed;
+  transition:
+    background-color 120ms ease, border-color 120ms ease, opacity 120ms ease,
+    transform 80ms ease;
+}
+
+.ism-error-action-primary:not(:disabled):hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+.ism-error-action-primary:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+.ism-error-action-secondary {
+  background: #111111;
+  border: 1px solid #2e2e2e;
+  transition:
+    background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+
+.ism-error-action-secondary:hover {
+  background: #1a1a1a;
+  border-color: #3a3a3a;
+}
+
+.ism-error-action-secondary:active {
+  background: #202020;
+}
+
+.ism-error-details-summary {
+  color: #a1a1a1;
+}
+
+.ism-error-details-summary:hover {
+  color: #ededed;
+}
+
+.ism-error-spinner {
+  animation: ism-error-spin 700ms linear infinite;
+}
+
+@keyframes ism-error-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .ism-error-action,
+  .ism-error-spinner {
+    transition: none;
+    animation: none;
+  }
+}
+
+.ism-devtools-button:focus-visible,
+.ism-devtools-tab:focus-visible {
+  outline: 2px solid #ededed;
+  outline-offset: 2px;
+}
+
+.ism-devtools-trigger {
+  background: #0a0a0a;
+  border: 1px solid #2e2e2e;
+}
+
+.ism-devtools-trigger:hover {
+  background: #161616;
+  border-color: #3a3a3a;
+}
+
+.ism-devtools-tab {
+  background: transparent;
+  color: #8f8f8f;
+}
+
+.ism-devtools-tab[aria-selected="true"],
+.ism-devtools-tab:hover {
+  color: #ededed;
+}
+
+.ism-devtools-close {
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.ism-devtools-close:hover {
+  background: #171717;
+  border-color: #2e2e2e;
 }

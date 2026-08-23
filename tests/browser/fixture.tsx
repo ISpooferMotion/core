@@ -241,9 +241,11 @@ function mountDevTools(): void {
 	mount(App);
 }
 
-function mountErrorRecovery(): void {
+function mountErrorRecovery(showErrorDetails = true): void {
 	failWidgetRender = false;
-	const App = createApp(() => FaultyCounter("Recoverable counter"));
+	const App = createApp(() => FaultyCounter("Recoverable counter"), {
+		showErrorDetails,
+	});
 	mount(App);
 	window.__ismFixture = {
 		app: App,
@@ -281,7 +283,10 @@ switch (scenario) {
 		mountDevTools();
 		break;
 	case "error-recovery":
-		mountErrorRecovery();
+		mountErrorRecovery(true);
+		break;
+	case "error-private":
+		mountErrorRecovery(false);
 		break;
 	default:
 		mountInteraction();
