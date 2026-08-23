@@ -81,8 +81,10 @@ jobs:
         if: steps.release-needed.outputs.needed == 'true'
         with:
           node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          scope: "@ispoofermotion"
 
-      - name: Install OIDC-capable npm
+      - name: Install npm
         if: steps.release-needed.outputs.needed == 'true'
         run: npm install --global npm@12.0.2
 
@@ -110,16 +112,11 @@ jobs:
         shell: bash
         run: npm sbom --sbom-format=spdx --omit=dev > .artifacts/sbom.spdx.json
 
-      - name: Publish exact validated tarball with npm OIDC
+      - name: Publish exact validated tarball
         if: steps.release-needed.outputs.needed == 'true' && steps.npm.outputs.exists == 'false'
-        shell: bash
-        run: |
-          # Trusted Publishing must not inherit setup-node's classic token auth.
-          unset NODE_AUTH_TOKEN
-          if [[ -n "${NPM_CONFIG_USERCONFIG:-}" && -f "$NPM_CONFIG_USERCONFIG" ]]; then
-            sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
-          fi
-          npm publish .artifacts/package.tgz --access public --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish .artifacts/package.tgz --access public --ignore-scripts --provenance
 
       - name: Extract release notes
         if: steps.release-needed.outputs.needed == 'true'
