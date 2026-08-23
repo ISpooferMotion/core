@@ -1,6 +1,6 @@
 {
 	"name": "@ispoofermotion/core",
-	"version": "4.0.0",
+	"version": "4.1.0",
 	"description": "Immediate-mode UI runtime for React, designed with Tauri applications in mind.",
 	"private": false,
 	"license": "MIT",
@@ -55,7 +55,11 @@
 				"types": "./dist/devtools-entry.d.cts",
 				"default": "./dist/devtools.cjs"
 			}
-		}
+		},
+		"./schema.json": "./schema.json",
+		"./assets/ism-config.png": "./assets/ism-config.png",
+		"./assets/ism-config-dark.png": "./assets/ism-config-dark.png",
+		"./assets/ism-config-light.png": "./assets/ism-config-light.png"
 	},
 	"files": [
 		"dist",
@@ -79,7 +83,7 @@
 		"test:browser": "bun run test:browser:build && bun run typecheck:browser && playwright test",
 		"docs": "typedoc && bun run docs:links",
 		"clean": "node scripts/clean.mjs",
-		"check:core": "bun run verify:lock && bun run lint && bun run typecheck && bun run test:coverage && bun run build && bun run size:check && bun run docs",
+		"check:core": "bun run verify:lock && bun run lint && bun run typecheck && bun run check:architecture && bun run test:coverage && bun run build && bun run size:check && bun run docs",
 		"check": "bun run check:core && bun run benchmark:runtime && bun run test:browser && bun run package:check",
 		"prepack": "bun run build",
 		"prepublishOnly": "bun run typecheck && bun run lint && bun run test:coverage",
@@ -92,7 +96,9 @@
 		"size:check": "node scripts/check-bundle-size.mjs",
 		"benchmark:runtime": "node scripts/benchmark-runtime.mjs",
 		"check:performance": "bun run size:check && bun run benchmark:runtime",
-		"docs:links": "node scripts/check-doc-links.mjs"
+		"docs:links": "node scripts/check-doc-links.mjs",
+		"clean:all": "node scripts/clean.mjs --all",
+		"check:architecture": "node scripts/check-devtools-isolation.mjs"
 	},
 	"lint-staged": {
 		"src/**/*.{ts,tsx}": [
@@ -104,8 +110,8 @@
 		"react-dom": ">=18 <20"
 	},
 	"devDependencies": {
-		"@axe-core/playwright": "4.13.0",
-		"@biomejs/biome": "^2.5.7",
+		"@axe-core/playwright": "4.12.1",
+		"@biomejs/biome": "^2.5.8",
 		"@playwright/test": "1.62.1",
 		"@types/node": "^24.13.3",
 		"@types/react": "^19.2.18",

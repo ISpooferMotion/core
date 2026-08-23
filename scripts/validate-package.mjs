@@ -25,6 +25,9 @@ try {
 		"node16",
 		"--exclude-entrypoints",
 		"styles.css",
+		"assets/ism-config.png",
+		"assets/ism-config-dark.png",
+		"assets/ism-config-light.png",
 	]);
 } finally {
 	await rm(temp, { recursive: true, force: true });

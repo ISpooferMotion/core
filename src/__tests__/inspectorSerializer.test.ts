@@ -53,16 +53,28 @@ describe("bounded DevTools serializer", () => {
 		).toContain("chars truncated");
 	});
 
-	it("contains hostile property failures instead of throwing", () => {
+	it("describes accessors without invoking getters", () => {
+		let reads = 0;
 		const state = {} as Record<string, unknown>;
 		Object.defineProperty(state, "bad", {
 			enumerable: true,
 			get() {
+				reads++;
 				throw new Error("getter exploded");
 			},
 		});
-		expect(serializeInspectorState(state)).toContain(
-			"Property threw: getter exploded",
+		const serialized = serializeInspectorState(state);
+		expect(serialized).toContain("[Getter]");
+		expect(serialized).not.toContain("getter exploded");
+		expect(reads).toBe(0);
+	});
+
+	it("normalizes invalid and excessive custom limits", () => {
+		const serialized = serializeInspectorState(
+			{ value: "abcdef", nested: { ok: true } },
+			{ maxStringLength: -10, maxDepth: Number.NaN, maxNodes: Infinity },
 		);
+		expect(serialized).toContain("chars truncated");
+		expect(serialized).toContain("nested");
 	});
 });

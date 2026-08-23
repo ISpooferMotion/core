@@ -68,6 +68,20 @@ describe("in-memory state retention", () => {
 		const result = runtime.getState<{ n: number }>(id, { n: 0 });
 		expect(result.n).toBe(10);
 	});
+
+	it("skips revisions and rerenders when setState returns the identical value", async () => {
+		const trigger = vi.fn();
+		runtime.registerApp(trigger);
+		const id = "widget/Counter/no-op";
+		const current = runtime.getState(id, { n: 0 });
+		const revision = runtime.getInspectionRevision("state");
+
+		runtime.setState(id, current);
+		await Promise.resolve();
+
+		expect(runtime.getInspectionRevision("state")).toBe(revision);
+		expect(trigger).not.toHaveBeenCalled();
+	});
 });
 
 class MemoryStorageAdapter implements StorageAdapter {

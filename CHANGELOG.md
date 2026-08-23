@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-08-23
+
+### Added
+
+- Added branded `ism.config.json` icon assets derived from the official ISM monogram, with packaged dark/light variants for editor and documentation integrations.
+- Added `CORE_VERSION`, a public package-version constant used by copied error diagnostics.
+- Added a static DevTools isolation check that prevents the normal package entry from accidentally pulling inspector/protocol code back into the root bundle.
+- Added `clean:all` for coverage/browser artifacts and expanded regression coverage for failed-then-successful recovery, production-safe disclosure, throwing hooks/fallbacks, lazy DevTools protocol installation, accessor-safe inspection, config drift, and no-op state updates.
+
+### Changed
+
+- Rebuilt the built-in error fallback around a compact Vercel-style neutral dark palette with a new Core error glyph, clearer hierarchy, `Error code` terminology, contextual recovery guidance, collapsed technical details, and a `Copy details` action.
+- Error recovery now shows a visible `Retrying...` state, detects immediate re-failures, reports them inline, prevents duplicate attempts while retrying, and returns keyboard focus to the retry action after a failed attempt.
+- DevTools now load as a real dynamic chunk and install their protocol only when the overlay mounts or a consumer explicitly calls `installDevToolsProtocol()` from the devtools subpath.
+- DevTools visuals now use the same restrained neutral dark design language and purpose-built SVG controls instead of emoji glyphs.
+- `ism-core init` now derives its scaffold from canonical runtime defaults, includes `stateRetentionFrames`, and references the published package schema.
+- `schema.json` now uses draft 2020-12 metadata, tighter runtime-aligned constraints, clearer descriptions/examples, and is exported directly as `@ispoofermotion/core/schema.json`.
+- Inspector serialization now clamps hostile/custom budgets and describes accessors without invoking getters or setters.
+- Returning the exact existing value/reference from `setState` is now treated as a true no-op and avoids persistence, revision, memo-invalidation, and redraw work.
+- Source packaging now prefers Git-tracked/non-ignored files, supports list-only review, blocks common secret/generated paths and oversized accidents, and avoids bundling transient coverage/Husky internals.
+- Release automation now checks whether the target version already exists on npm/GitHub rather than requiring the previous commit to contain the version bump, making failed releases safely retryable.
+
+### Fixed
+
+- Error detail disclosure now fails closed when `process`/`NODE_ENV` is unavailable, preventing browser production builds from accidentally exposing exception messages or stacks.
+- Throwing consumer `onError` handlers and custom fallback renderers can no longer replace or destroy Core's built-in last-resort error UI.
+- Structured render/draw diagnostics preserve an existing `ISMError` code instead of unnecessarily flattening every caught failure to a generic render/draw code.
+- DevTools inspection no longer executes user getters merely by opening the inspector.
+
 ## [4.0.0] - 2026-08-12
 
 ### Added

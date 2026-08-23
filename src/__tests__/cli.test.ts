@@ -80,6 +80,7 @@ describe("runCli", () => {
 		expect(parsed.showDevTools).toBe(false);
 		expect(parsed.strictIds).toBe(false);
 		expect(parsed.strictRuntime).toBe(false);
+		expect(parsed.stateRetentionFrames).toBe(1);
 		logSpy.mockRestore();
 	});
 

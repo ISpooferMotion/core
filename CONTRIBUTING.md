@@ -40,7 +40,7 @@ bun run test:coverage
 
 Biome handles formatting and linting. Match the existing TypeScript style and keep comments focused on why something exists, not what the next line already says.
 
-A commit hook runs Biome on staged source files. A push hook runs the fast typecheck and Vitest suite; `bun run check` is the authoritative pre-PR gate and runs core validation, the real-browser suite, reproducible package validation, publint/ATTW, and clean packed-consumer fixtures.
+A commit hook runs Biome on staged source files. A push hook runs the fast typecheck and Vitest suite; `bun run check` is the authoritative pre-PR gate and runs core validation, the DevTools isolation guard, the real-browser suite, reproducible package validation, publint/ATTW, and clean packed-consumer fixtures. Use `bun run clean:all` when you need to remove coverage and browser-test artifacts in addition to normal build/docs output.
 
 ## Commit messages
 
@@ -66,9 +66,9 @@ Be direct without being rude. Review the code, not the person, and give enough c
 
 ## Release preparation
 
-A release commit must bump `package.json` and add a non-empty exact `## [x.y.z]` section to `CHANGELOG.md`. Successful CI alone does not publish: the release workflow runs only when the package version changed.
+A release commit must bump `package.json` and add a non-empty exact `## [x.y.z]` section to `CHANGELOG.md`. The release workflow checks the desired package version against npm and the matching GitHub release instead of relying on the immediately previous commit, so a failed version-bump run can be repaired and safely retried without another artificial version bump.
 
-The npm package must configure `.github/workflows/release.yml` as its GitHub Actions trusted publisher. Releases use OIDC and must not use a long-lived `NPM_TOKEN`. The workflow builds one tarball, validates that exact file, emits an SPDX SBOM and SHA-256 digest, then publishes the same tarball.
+The npm package must configure `.github/workflows/release.yml` as its GitHub Actions trusted publisher. Releases use OIDC and must not use a long-lived `NPM_TOKEN`. The workflow builds one tarball, validates that exact file, emits an SPDX SBOM and SHA-256 digest, publishes only when that npm version is missing, and creates or updates the matching GitHub release as needed.
 
 ## Documentation changes
 

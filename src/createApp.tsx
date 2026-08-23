@@ -3,24 +3,31 @@ import type { ErrorInfo, ReactNode } from "react";
 import {
 	createElement,
 	Fragment,
+	lazy,
+	Suspense,
 	useContext,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
 	useReducer,
+	useRef,
 } from "react";
 import type { IsmConfig, LayerMode } from "./config";
 import { resolveConfig } from "./config";
-import { DevToolsOverlay } from "./DevTools";
 import {
-	ErrorFallback,
 	type ErrorFallbackContext,
 	ISMCoreErrorBoundary,
+	SafeErrorFallback,
 	shouldShowErrorDetailsByDefault,
 } from "./ErrorBoundary";
 import * as errors from "./errors";
 import { getActiveRuntimeOrNull, Runtime, withRuntime } from "./runtime";
 import type { FrameEntry, StorageAdapter, StorageFailure } from "./types";
+
+const LazyDevToolsOverlay = lazy(async () => {
+	const module = await import("./DevTools");
+	return { default: module.DevToolsOverlay };
+});
 
 /**
  * Render one frame entry and its children.
@@ -257,13 +264,13 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 		);
 	}
 
-	function ISMCoreRenderer({
-		runtime,
-		forceRender,
-	}: {
-		runtime: Runtime;
-		forceRender: () => void;
-	}) {
+	function ISMCoreRenderer({ runtime }: { runtime: Runtime }) {
+		const [drawRetryAttempt, requestDrawRetry] = useReducer(
+			(attempt: number) => attempt + 1,
+			0,
+		);
+		const lastSuccessfulRetryAttempt = useRef(0);
+
 		// Record the current frame as plain runtime data. withRuntime always
 		// restores the previous active runtime, including on failure.
 		let drawError: Error | null = null;
@@ -292,7 +299,7 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 					errors.emitDiagnostic(
 						onDiagnostic,
 						errors.createDiagnostic(
-							"ISM_DRAW_ERROR",
+							errors.getErrorCode(drawError, "ISM_DRAW_ERROR"),
 							"error",
 							"[ism] onError hook threw while handling a draw failure.",
 							{ cause: hookError, runtimeId: runtime.getInstanceId() },
@@ -307,6 +314,7 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 		useLayoutEffect(() => {
 			if (frameTransactionId !== null && drawError === null) {
 				runtime.commitFrame(frameTransactionId);
+				lastSuccessfulRetryAttempt.current = drawRetryAttempt;
 			}
 			return () => {
 				if (frameTransactionId !== null) {
@@ -322,11 +330,14 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 				kind: "draw",
 				errorCode: errors.getErrorCode(drawError, "ISM_DRAW_ERROR"),
 				showErrorDetails,
-				onRetry: forceRender,
+				retryFailed: drawRetryAttempt > lastSuccessfulRetryAttempt.current,
+				onRetry: requestDrawRetry,
 			};
-			return renderErrorFallback
-				? renderErrorFallback(context)
-				: createElement(ErrorFallback, context);
+			return createElement(SafeErrorFallback, {
+				context,
+				...(renderErrorFallback ? { renderFallback: renderErrorFallback } : {}),
+				...(onDiagnostic ? { onDiagnostic } : {}),
+			});
 		}
 
 		const frameBuffer = runtime.getFrameBuffer();
@@ -343,10 +354,14 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 			Fragment,
 			null,
 			renderedFrame,
-			createElement(DevToolsOverlay, {
-				runtime,
-				zIndex: config.layerZIndex + 1,
-			}),
+			createElement(
+				Suspense,
+				{ fallback: null },
+				createElement(LazyDevToolsOverlay, {
+					runtime,
+					zIndex: config.layerZIndex + 1,
+				}),
+			),
 		);
 	}
 
@@ -390,7 +405,7 @@ export function createApp(drawFn: () => void, options?: AppOptions): IsmApp {
 				showErrorDetails={showErrorDetails}
 				{...(onDiagnostic ? { onDiagnostic } : {})}
 			>
-				<ISMCoreRenderer runtime={runtime} forceRender={forceRender} />
+				<ISMCoreRenderer runtime={runtime} />
 			</ISMCoreErrorBoundary>
 		);
 	}

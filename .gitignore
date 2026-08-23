@@ -35,3 +35,6 @@ tests/browser/.tmp/
 
 # Package/release artifacts
 .artifacts/
+
+# Miscellaneous
+*.ps1

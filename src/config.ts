@@ -72,6 +72,26 @@ export const DEFAULT_STATE_RETENTION_FRAMES = 1;
 /** Default value for {@link IsmConfig.layerMode}. */
 export const DEFAULT_LAYER_MODE: LayerMode = "root";
 
+/** Canonical public configuration keys, used to keep scaffolds and schemas aligned. */
+export const ISM_CONFIG_KEYS = [
+	"layerZIndex",
+	"layerMode",
+	"showDevTools",
+	"strictIds",
+	"strictRuntime",
+	"stateRetentionFrames",
+] as const satisfies readonly (keyof IsmConfig)[];
+
+/** Canonical default configuration used by the runtime and CLI scaffold. */
+export const DEFAULT_ISM_CONFIG: Readonly<Required<IsmConfig>> = Object.freeze({
+	layerZIndex: DEFAULT_LAYER_Z_INDEX,
+	layerMode: DEFAULT_LAYER_MODE,
+	showDevTools: DEFAULT_SHOW_DEV_TOOLS,
+	strictIds: DEFAULT_STRICT_IDS,
+	strictRuntime: DEFAULT_STRICT_RUNTIME,
+	stateRetentionFrames: DEFAULT_STATE_RETENTION_FRAMES,
+});
+
 interface ResolvedIsmConfig {
 	layerZIndex: number;
 	showDevTools: boolean;

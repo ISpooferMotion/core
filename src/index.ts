@@ -84,6 +84,7 @@ export type {
 	WidgetProps,
 	WidgetRenderProps,
 } from "./types";
+export { CORE_VERSION } from "./version";
 
 import * as errors from "./errors";
 import {

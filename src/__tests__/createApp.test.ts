@@ -9,6 +9,21 @@ import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
 
 let container: HTMLDivElement;
 
+async function waitForCondition(
+	condition: () => boolean,
+	timeoutMs = 1000,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (!condition()) {
+		if (Date.now() >= deadline) {
+			throw new Error("Timed out waiting for the expected React state.");
+		}
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		});
+	}
+}
+
 beforeEach(() => {
 	container = document.createElement("div");
 	document.body.appendChild(container);
@@ -297,41 +312,69 @@ describe("createApp", () => {
 		);
 	});
 
-	it("shows the draw-error fallback when the draw function throws, and recovers on retry", async () => {
+	it("shows draw retry feedback, reports an immediate re-failure, and then recovers", async () => {
 		const consoleError = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
-
 		let shouldThrow = true;
 
 		const App = createApp(() => {
-			if (shouldThrow) {
-				throw new Error("draw exploded");
-			}
-
+			if (shouldThrow) throw new Error("draw exploded");
 			Text("recovered");
 		});
-
 		const root = createTestRoot(container);
-
-		act(() => {
-			root.render(createElement(App));
-		});
+		act(() => root.render(createElement(App)));
 
 		expect(container.querySelector("[data-ism-error]")).not.toBeNull();
 		expect(container.textContent).toContain("draw exploded");
 
-		shouldThrow = false;
-
-		const retryButton = container.querySelector("button");
-
 		await act(async () => {
-			retryButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			Array.from(container.querySelectorAll("button"))
+				.find((button) => button.textContent === "Try again")
+				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			await new Promise((resolve) => setTimeout(resolve, 120));
+		});
+		expect(container.textContent).toContain("Retry failed");
+
+		shouldThrow = false;
+		await act(async () => {
+			Array.from(container.querySelectorAll("button"))
+				.find((button) => button.textContent === "Try again")
+				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			await new Promise((resolve) => setTimeout(resolve, 120));
 		});
 
 		expect(container.querySelector("[data-ism-error]")).toBeNull();
 		expect(container.textContent).toContain("recovered");
+		consoleError.mockRestore();
+	});
 
+	it("restores the built-in draw fallback when a custom fallback throws", () => {
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
+		const onDiagnostic = vi.fn();
+		const App = createApp(
+			() => {
+				throw new Error("draw exploded");
+			},
+			{
+				onDiagnostic,
+				renderErrorFallback: () => {
+					throw new Error("fallback exploded");
+				},
+			},
+		);
+		const root = createTestRoot(container);
+		act(() => root.render(createElement(App)));
+
+		expect(container.querySelector("[data-ism-error]")).not.toBeNull();
+		expect(container.textContent).toContain("Draw function error");
+		expect(onDiagnostic).toHaveBeenCalledWith(
+			expect.objectContaining({
+				message: expect.stringContaining("Custom error fallback threw"),
+			}),
+		);
 		consoleError.mockRestore();
 	});
 
@@ -379,10 +422,10 @@ describe("createApp", () => {
 
 		shouldThrow = false;
 		await act(async () => {
-			container
-				.querySelector("[data-ism-error] button")
+			Array.from(container.querySelectorAll("[data-ism-error] button"))
+				.find((button) => button.textContent === "Try again")
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-			await Promise.resolve();
+			await new Promise((resolve) => setTimeout(resolve, 120));
 		});
 
 		expect(container.querySelector("[data-ism-error]")).toBeNull();
@@ -480,6 +523,9 @@ describe("createApp", () => {
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			await Promise.resolve();
 		});
+		await waitForCondition(
+			() => observations.filter(Boolean).length === 2,
+		);
 
 		expect(observations.filter(Boolean)).toHaveLength(2);
 		expect(container.textContent).toContain("clicked committed");
@@ -503,6 +549,9 @@ describe("createApp", () => {
 		await act(async () => {
 			rootWith.render(createElement(AppWith));
 		});
+		await waitForCondition(
+			() => container.querySelector('[aria-label="Open DevTools"]') !== null,
+		);
 
 		expect(
 			container.querySelector('[aria-label="Open DevTools"]'),
@@ -678,7 +727,9 @@ describe("createApp diagnostics and production error handling", () => {
 		expect(fallback?.getAttribute("data-ism-error-code")).toBe(
 			"ISM_DRAW_ERROR",
 		);
-		expect(container.textContent).toContain("Something went wrong.");
+		expect(container.textContent).toContain(
+			"Core could not complete the current draw frame.",
+		);
 		expect(container.textContent).not.toContain("secret draw details");
 		expect(onDiagnostic).toHaveBeenCalledWith(
 			expect.objectContaining({ code: "ISM_DRAW_ERROR", level: "error" }),

@@ -237,6 +237,8 @@ Do not call `useReactContext` inside a `memoBlock`. A cache hit skips the closur
 
 Memo and state retention use committed frame generations, not wall-clock timers. `stateRetentionFrames` controls how many missing committed frames are retained before cleanup.
 
+Widget state should be treated as immutable. Returning the exact current value/reference from `setState` is a no-op and intentionally skips persistence, inspection revision changes, memo invalidation, and redraw scheduling.
+
 ## Configuration
 
 ```ts
@@ -263,7 +265,19 @@ Key defaults:
 
 `strictRuntime` turns unbalanced scope, ID, context, and layer operations into coded frame-aborting errors. It is recommended for development and tests.
 
-`showDevTools` lazy-loads the built-in inspector so normal core consumers do not statically include the inspector implementation.
+`showDevTools` lazy-loads the built-in inspector so normal core consumers do not statically include the inspector implementation or install the DevTools protocol until the overlay is actually mounted.
+
+The package exports its JSON Schema at `@ispoofermotion/core/schema.json`. The `ism-core init` scaffold references the matching published schema and is generated from the same canonical public defaults used by the runtime.
+
+### Config file icon
+
+Core ships the official ISM monogram as config-file assets:
+
+- `@ispoofermotion/core/assets/ism-config.png` for a self-contained dark tile
+- `@ispoofermotion/core/assets/ism-config-dark.png` for dark editor surfaces
+- `@ispoofermotion/core/assets/ism-config-light.png` for light editor surfaces
+
+These assets are intended for `ism.config.json` integrations, docs, and file-icon themes. Core does not force an editor-wide icon theme or change the JSON language mode just to brand one filename; editors remain in control of Explorer/file icons.
 
 ## Diagnostics and errors
 
@@ -283,7 +297,9 @@ const App = createApp(draw, {
 
 Thrown runtime errors with a stable identity use `ISMError`. Prefer `error.code` over exact message matching.
 
-The built-in fallback hides exception messages, stacks, and component stacks by default in production. Set `showErrorDetails: true` only when exposing those details is appropriate. `renderErrorFallback` can replace the built-in fallback.
+The built-in fallback uses a compact Vercel-style neutral dark surface with a restrained error accent. Retry actions visibly enter a `Retrying...` state, report an immediate re-failure instead of appearing unresponsive, and restore keyboard focus to **Try again** when recovery fails. **Copy details** copies the stable Core version/code/source and includes messages or stacks only when detailed disclosure is enabled. Technical details stay collapsed by default.
+
+Exception messages, stacks, and component stacks fail closed by default unless Core can positively identify a non-production Node-style environment. Set `showErrorDetails: true` only when exposing those details is appropriate. A throwing consumer `onError` hook or `renderErrorFallback` cannot destroy Core's built-in last-resort fallback.
 
 ## DevTools
 
@@ -302,7 +318,7 @@ const protocol = installDevToolsProtocol();
 console.log(protocol.listRuntimes());
 ```
 
-The v1 protocol uses `Symbol.for("@ispoofermotion/core/devtools/v1")` and returns bounded serialized snapshots rather than live `Runtime` objects.
+The v1 protocol uses `Symbol.for("@ispoofermotion/core/devtools/v1")` and returns bounded serialized snapshots rather than live `Runtime` objects. Importing the normal package root does not install this protocol. `createApp({ showDevTools: true })` installs it when the lazily loaded overlay mounts, while direct users of the `devtools` subpath can install it explicitly. Inspector serialization does not invoke object getters.
 
 ## CLI
 
@@ -320,7 +336,7 @@ Or with npm:
 npx --package @ispoofermotion/core ism-core init
 ```
 
-Use `--force` to replace an existing file. The runtime does not automatically load `ism.config.json`; import it through your application tooling and pass its values to `createApp`.
+Use `--force` to replace an existing file. The scaffold includes every public runtime config key, including `stateRetentionFrames`, and points at the published JSON Schema. The runtime does not automatically load `ism.config.json`; import it through your application tooling and pass its values to `createApp`.
 
 ## Support matrix
 
@@ -353,11 +369,12 @@ bun run check
 
 Useful commands:
 
-- `bun run check:core` runs lock verification, lint, TypeScript, Vitest coverage, build, size checks, and documentation checks.
+- `bun run check:core` runs lock verification, lint, TypeScript, the DevTools isolation guard, Vitest coverage, build, size checks, and documentation checks.
 - `bun run test:browser` runs Playwright in Chromium, Firefox, and WebKit with axe accessibility checks.
 - `bun run benchmark:runtime` runs the scalable runtime benchmark suite.
 - `bun run package:check` verifies reproducibility, package metadata/types, clean consumer fixtures, and the exact tarball.
 - `bun run docs` generates TypeDoc output and validates local documentation links.
+- `bun run clean` removes normal build/docs output; `bun run clean:all` also removes coverage and browser-test artifacts.
 
 ## License
 

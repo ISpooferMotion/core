@@ -4,13 +4,7 @@ import { join } from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import {
-	DEFAULT_LAYER_MODE,
-	DEFAULT_LAYER_Z_INDEX,
-	DEFAULT_SHOW_DEV_TOOLS,
-	DEFAULT_STRICT_IDS,
-	DEFAULT_STRICT_RUNTIME,
-} from "./config";
+import { DEFAULT_ISM_CONFIG } from "./config";
 import { getErrorMessage } from "./errors";
 
 const CONFIG_FILENAME = "ism.config.json";
@@ -88,11 +82,7 @@ export function runCli(argv: string[], deps: CliDeps): number {
 	const defaultConfig = `${JSON.stringify(
 		{
 			$schema: `https://unpkg.com/@ispoofermotion/core@${deps.version}/schema.json`,
-			layerZIndex: DEFAULT_LAYER_Z_INDEX,
-			layerMode: DEFAULT_LAYER_MODE,
-			showDevTools: DEFAULT_SHOW_DEV_TOOLS,
-			strictIds: DEFAULT_STRICT_IDS,
-			strictRuntime: DEFAULT_STRICT_RUNTIME,
+			...DEFAULT_ISM_CONFIG,
 		},
 		null,
 		2,

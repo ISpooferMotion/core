@@ -41,12 +41,64 @@ function truncateString(value: string, limit: number): string {
 	return `${value.slice(0, limit)}… <${value.length - limit} chars truncated>`;
 }
 
+const INSPECTOR_LIMIT_CEILINGS: Readonly<InspectorLimits> = {
+	maxDepth: 64,
+	maxNodes: 100_000,
+	maxArrayLength: 10_000,
+	maxObjectKeys: 10_000,
+	maxStringLength: 100_000,
+	maxTreeDepth: 256,
+	maxTreeNodes: 100_000,
+};
+
+function normalizeLimit(
+	value: number | undefined,
+	fallback: number,
+	ceiling: number,
+): number {
+	if (value === undefined || !Number.isFinite(value)) return fallback;
+	return Math.min(Math.max(Math.floor(value), 0), ceiling);
+}
+
 function normalizeLimits(
 	overrides?: Partial<InspectorLimits>,
 ): InspectorLimits {
 	return {
-		...DEFAULT_INSPECTOR_LIMITS,
-		...overrides,
+		maxDepth: normalizeLimit(
+			overrides?.maxDepth,
+			DEFAULT_INSPECTOR_LIMITS.maxDepth,
+			INSPECTOR_LIMIT_CEILINGS.maxDepth,
+		),
+		maxNodes: normalizeLimit(
+			overrides?.maxNodes,
+			DEFAULT_INSPECTOR_LIMITS.maxNodes,
+			INSPECTOR_LIMIT_CEILINGS.maxNodes,
+		),
+		maxArrayLength: normalizeLimit(
+			overrides?.maxArrayLength,
+			DEFAULT_INSPECTOR_LIMITS.maxArrayLength,
+			INSPECTOR_LIMIT_CEILINGS.maxArrayLength,
+		),
+		maxObjectKeys: normalizeLimit(
+			overrides?.maxObjectKeys,
+			DEFAULT_INSPECTOR_LIMITS.maxObjectKeys,
+			INSPECTOR_LIMIT_CEILINGS.maxObjectKeys,
+		),
+		maxStringLength: normalizeLimit(
+			overrides?.maxStringLength,
+			DEFAULT_INSPECTOR_LIMITS.maxStringLength,
+			INSPECTOR_LIMIT_CEILINGS.maxStringLength,
+		),
+		maxTreeDepth: normalizeLimit(
+			overrides?.maxTreeDepth,
+			DEFAULT_INSPECTOR_LIMITS.maxTreeDepth,
+			INSPECTOR_LIMIT_CEILINGS.maxTreeDepth,
+		),
+		maxTreeNodes: normalizeLimit(
+			overrides?.maxTreeNodes,
+			DEFAULT_INSPECTOR_LIMITS.maxTreeNodes,
+			INSPECTOR_LIMIT_CEILINGS.maxTreeNodes,
+		),
 	};
 }
 
@@ -190,17 +242,35 @@ function inspectValue(
 	for (let index = 0; index < limit; index++) {
 		const key = keys[index];
 		if (key === undefined) continue;
+		let descriptor: PropertyDescriptor | undefined;
 		try {
-			result[key] = inspectValue(
-				(value as Record<string, unknown>)[key],
-				context,
-				depth + 1,
-				`${path}.${key}`,
-			);
+			descriptor = Object.getOwnPropertyDescriptor(value, key);
 		} catch (error) {
 			result[key] =
-				`[Property threw: ${error instanceof Error ? error.message : String(error)}]`;
+				`[Property descriptor threw: ${error instanceof Error ? error.message : String(error)}]`;
+			continue;
 		}
+
+		if (!descriptor) {
+			result[key] = "[Unavailable property descriptor]";
+			continue;
+		}
+
+		if (descriptor.get || descriptor.set) {
+			result[key] = descriptor.get
+				? descriptor.set
+					? "[Getter/Setter]"
+					: "[Getter]"
+				: "[Setter]";
+			continue;
+		}
+
+		result[key] = inspectValue(
+			descriptor.value,
+			context,
+			depth + 1,
+			`${path}.${key}`,
+		);
 	}
 	if (keys.length > limit)
 		result["…"] = `[${keys.length - limit} object keys truncated]`;
