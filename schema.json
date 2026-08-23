@@ -6,26 +6,17 @@
 			"type": "string",
 			"format": "uri",
 			"description": "Schema URL used by editors for validation and autocomplete.",
-			"examples": [
-				"https://unpkg.com/@ispoofermotion/core@4.1.0/schema.json"
-			]
+			"examples": ["https://unpkg.com/@ispoofermotion/core@4.1.0/schema.json"]
 		},
 		"layerZIndex": {
 			"type": "number",
 			"description": "Base z-index applied to non-default layers (modals, tooltips, etc.). Defaults to 100.",
 			"default": 100,
-			"examples": [
-				100,
-				200,
-				1000
-			]
+			"examples": [100, 200, 1000]
 		},
 		"layerMode": {
 			"type": "string",
-			"enum": [
-				"root",
-				"viewport"
-			],
+			"enum": ["root", "viewport"],
 			"description": "Position non-default layers relative to the app root or browser viewport. Defaults to root.",
 			"default": "root"
 		},
