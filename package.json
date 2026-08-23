@@ -6,12 +6,12 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/ISpooferMotion/core.git"
+		"url": "git+https://github.com/ISpooferMotion/Core.git"
 	},
 	"bugs": {
-		"url": "https://github.com/ISpooferMotion/core/issues"
+		"url": "https://github.com/ISpooferMotion/Core/issues"
 	},
-	"homepage": "https://github.com/ISpooferMotion/core#readme",
+	"homepage": "https://github.com/ISpooferMotion/Core#readme",
 	"keywords": [
 		"immediate-mode",
 		"ui",

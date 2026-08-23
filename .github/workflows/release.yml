@@ -81,7 +81,6 @@ jobs:
         if: steps.release-needed.outputs.needed == 'true'
         with:
           node-version: "24"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Install OIDC-capable npm
         if: steps.release-needed.outputs.needed == 'true'
@@ -113,7 +112,14 @@ jobs:
 
       - name: Publish exact validated tarball with npm OIDC
         if: steps.release-needed.outputs.needed == 'true' && steps.npm.outputs.exists == 'false'
-        run: npm publish .artifacts/package.tgz --access public --ignore-scripts
+        shell: bash
+        run: |
+          # Trusted Publishing must not inherit setup-node's classic token auth.
+          unset NODE_AUTH_TOKEN
+          if [[ -n "${NPM_CONFIG_USERCONFIG:-}" && -f "$NPM_CONFIG_USERCONFIG" ]]; then
+            sed -i '/_authToken/d' "$NPM_CONFIG_USERCONFIG"
+          fi
+          npm publish .artifacts/package.tgz --access public --ignore-scripts
 
       - name: Extract release notes
         if: steps.release-needed.outputs.needed == 'true'
