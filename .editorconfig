@@ -8,5 +8,5 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-[*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc}]
+[*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}]
 indent_style = tab

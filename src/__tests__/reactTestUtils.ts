@@ -28,3 +28,18 @@ export function cleanupTestRoots(): void {
 		for (const root of Array.from(mountedRoots)) root.unmount();
 	});
 }
+
+export async function waitForCondition(
+	condition: () => boolean,
+	timeoutMs = 2000,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (!condition()) {
+		if (Date.now() >= deadline) {
+			throw new Error("Timed out waiting for the expected React state.");
+		}
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		});
+	}
+}

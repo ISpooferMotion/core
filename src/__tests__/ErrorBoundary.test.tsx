@@ -6,7 +6,11 @@ import {
 	shouldShowErrorDetailsByDefault,
 } from "../ErrorBoundary";
 import { ISMError } from "../errors";
-import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
+import {
+	cleanupTestRoots,
+	createTestRoot,
+	waitForCondition,
+} from "./reactTestUtils";
 
 let container: HTMLDivElement;
 beforeEach(() => {
@@ -37,21 +41,6 @@ async function clickAndFlush(button: HTMLButtonElement | null): Promise<void> {
 		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 		await Promise.resolve();
 	});
-}
-
-async function waitForCondition(
-	condition: () => boolean,
-	timeoutMs = 1000,
-): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	while (!condition()) {
-		if (Date.now() >= deadline) {
-			throw new Error("Timed out waiting for the expected React state.");
-		}
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve, 20));
-		});
-	}
 }
 
 describe("ISMCoreErrorBoundary", () => {
@@ -201,6 +190,7 @@ describe("ISMCoreErrorBoundary", () => {
 		expect(buttonNamed("Try again")).not.toBeNull();
 
 		shouldThrow = false;
+		act(() => root.render(createElement(Wrapper)));
 		await clickAndFlush(buttonNamed("Try again"));
 		await waitForCondition(
 			() => container.querySelector("[data-ism-error]") === null,
@@ -305,10 +295,63 @@ describe("ErrorFallback", () => {
 		expect(container.textContent).toContain("Retrying...");
 		expect(onRetry).not.toHaveBeenCalled();
 
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve, 100));
+		await waitForCondition(() => onRetry.mock.calls.length === 1);
+		expect(onRetry).toHaveBeenCalledTimes(1);
+	});
+
+	it("reports a rejected retry callback and restores retry focus", async () => {
+		const onRetry = vi.fn(async () => {
+			throw new Error("retry callback failed");
+		});
+		const root = createTestRoot(container);
+		act(() => {
+			root.render(
+				createElement(ErrorFallback, { title: "t", error: "x", onRetry }),
+			);
+		});
+
+		await clickAndFlush(buttonNamed("Try again"));
+		await waitForCondition(() => {
+			const retryButton = buttonNamed("Try again");
+			return (
+				(container.textContent?.includes("recovery callback threw") ?? false) &&
+				retryButton !== null &&
+				document.activeElement === retryButton
+			);
 		});
 		expect(onRetry).toHaveBeenCalledTimes(1);
+		expect(buttonNamed("Try again")).toBe(document.activeElement);
+	});
+
+	it("shows copy failure feedback when clipboard access rejects", async () => {
+		const originalClipboard = Object.getOwnPropertyDescriptor(
+			navigator,
+			"clipboard",
+		);
+		const writeText = vi.fn(async () => {
+			throw new Error("clipboard rejected");
+		});
+		Object.defineProperty(navigator, "clipboard", {
+			value: { writeText },
+			configurable: true,
+		});
+
+		try {
+			const root = createTestRoot(container);
+			act(() => {
+				root.render(createElement(ErrorFallback, { title: "t", error: "x" }));
+			});
+
+			await clickAndFlush(buttonNamed("Copy details"));
+			await waitForCondition(() => buttonNamed("Copy failed") !== null);
+			expect(writeText).toHaveBeenCalledTimes(1);
+		} finally {
+			if (originalClipboard) {
+				Object.defineProperty(navigator, "clipboard", originalClipboard);
+			} else {
+				Reflect.deleteProperty(navigator, "clipboard");
+			}
+		}
 	});
 
 	it("copies diagnostics without leaking hidden production details", async () => {
@@ -358,6 +401,14 @@ describe("ErrorFallback", () => {
 });
 
 describe("production-safe error disclosure", () => {
+	it("uses the explicit NODE_ENV value for the default disclosure policy", () => {
+		vi.stubGlobal("process", { env: { NODE_ENV: "development" } });
+		expect(shouldShowErrorDetailsByDefault()).toBe(true);
+
+		vi.stubGlobal("process", { env: { NODE_ENV: "production" } });
+		expect(shouldShowErrorDetailsByDefault()).toBe(false);
+	});
+
 	it("fails closed when process is unavailable", () => {
 		vi.stubGlobal("process", undefined);
 		expect(shouldShowErrorDetailsByDefault()).toBe(false);

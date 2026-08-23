@@ -5,24 +5,13 @@ import { defineWidget } from "../defineWidget";
 import { markDirty, memoBlock, popLayer, pushLayer } from "../index";
 import { makeInteractive } from "../makeInteractive";
 import { mountedRuntimes } from "../runtime";
-import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
+import {
+	cleanupTestRoots,
+	createTestRoot,
+	waitForCondition,
+} from "./reactTestUtils";
 
 let container: HTMLDivElement;
-
-async function waitForCondition(
-	condition: () => boolean,
-	timeoutMs = 1000,
-): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	while (!condition()) {
-		if (Date.now() >= deadline) {
-			throw new Error("Timed out waiting for the expected React state.");
-		}
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve, 20));
-		});
-	}
-}
 
 beforeEach(() => {
 	container = document.createElement("div");
@@ -332,8 +321,10 @@ describe("createApp", () => {
 			Array.from(container.querySelectorAll("button"))
 				.find((button) => button.textContent === "Try again")
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-			await new Promise((resolve) => setTimeout(resolve, 120));
 		});
+		await waitForCondition(
+			() => container.querySelector("[data-ism-retry-state='failed']") !== null,
+		);
 		expect(container.textContent).toContain("Retry failed");
 
 		shouldThrow = false;
@@ -341,8 +332,10 @@ describe("createApp", () => {
 			Array.from(container.querySelectorAll("button"))
 				.find((button) => button.textContent === "Try again")
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-			await new Promise((resolve) => setTimeout(resolve, 120));
 		});
+		await waitForCondition(
+			() => container.querySelector("[data-ism-error]") === null,
+		);
 
 		expect(container.querySelector("[data-ism-error]")).toBeNull();
 		expect(container.textContent).toContain("recovered");
@@ -425,8 +418,10 @@ describe("createApp", () => {
 			Array.from(container.querySelectorAll("[data-ism-error] button"))
 				.find((button) => button.textContent === "Try again")
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-			await new Promise((resolve) => setTimeout(resolve, 120));
 		});
+		await waitForCondition(
+			() => container.querySelector("[data-ism-error]") === null,
+		);
 
 		expect(container.querySelector("[data-ism-error]")).toBeNull();
 		expect(container.querySelector("[data-count='1']")).not.toBeNull();

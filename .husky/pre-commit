@@ -1,1 +1,3 @@
 bunx lint-staged
+git diff --check --cached
+bun run lint

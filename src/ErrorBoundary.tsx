@@ -419,10 +419,10 @@ export function ErrorFallback({
 	}, []);
 
 	useEffect(() => {
-		if (!retryFailed) return;
+		if (!retryFailed && !retryInvocationFailed) return;
 		setIsRetrying(false);
 		retryButtonRef.current?.focus();
-	}, [retryFailed]);
+	}, [retryFailed, retryInvocationFailed]);
 
 	const originalMessage =
 		error instanceof Error ? error.message : String(error);
@@ -462,13 +462,11 @@ export function ErrorFallback({
 						if (!mounted.current) return;
 						setIsRetrying(false);
 						setRetryInvocationFailed(true);
-						retryButtonRef.current?.focus();
 					},
 				);
 			} catch {
 				setIsRetrying(false);
 				setRetryInvocationFailed(true);
-				retryButtonRef.current?.focus();
 			}
 		}, 80);
 	};

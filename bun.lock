@@ -6,7 +6,7 @@
       "name": "@ispoofermotion/core",
       "devDependencies": {
         "@axe-core/playwright": "4.12.1",
-        "@biomejs/biome": "^2.5.8",
+        "@biomejs/biome": "2.5.8",
         "@playwright/test": "1.62.1",
         "@types/node": "^24.13.3",
         "@types/react": "^19.2.18",

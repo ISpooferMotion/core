@@ -75,6 +75,8 @@
 		"prepare": "husky",
 		"typecheck": "tsc --noEmit",
 		"typecheck:browser": "tsc --project tsconfig.browser.json --noEmit",
+		"format": "biome check --write .",
+		"format:check": "biome ci .",
 		"lint": "biome ci .",
 		"test": "vitest run",
 		"test:watch": "vitest",
@@ -85,6 +87,7 @@
 		"clean": "node scripts/clean.mjs",
 		"check:core": "bun run verify:lock && bun run lint && bun run typecheck && bun run check:architecture && bun run test:coverage && bun run build && bun run size:check && bun run docs",
 		"check": "bun run check:core && bun run benchmark:runtime && bun run test:browser && bun run package:check",
+		"verify": "bun run check && node dist/cli.js --version && node dist/cli.js --help",
 		"prepack": "bun run build",
 		"prepublishOnly": "bun run typecheck && bun run lint && bun run test:coverage",
 		"verify:lock": "node scripts/verify-lock.mjs",
@@ -101,7 +104,7 @@
 		"check:architecture": "node scripts/check-devtools-isolation.mjs"
 	},
 	"lint-staged": {
-		"src/**/*.{ts,tsx}": [
+		"*.{cjs,css,js,jsx,json,jsonc,mjs,ts,tsx}": [
 			"biome check --write"
 		]
 	},
@@ -111,7 +114,7 @@
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "4.12.1",
-		"@biomejs/biome": "^2.5.8",
+		"@biomejs/biome": "2.5.8",
 		"@playwright/test": "1.62.1",
 		"@types/node": "^24.13.3",
 		"@types/react": "^19.2.18",
