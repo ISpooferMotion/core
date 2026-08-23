@@ -523,9 +523,7 @@ describe("createApp", () => {
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			await Promise.resolve();
 		});
-		await waitForCondition(
-			() => observations.filter(Boolean).length === 2,
-		);
+		await waitForCondition(() => observations.filter(Boolean).length === 2);
 
 		expect(observations.filter(Boolean)).toHaveLength(2);
 		expect(container.textContent).toContain("clicked committed");
