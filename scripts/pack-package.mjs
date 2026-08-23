@@ -28,12 +28,40 @@ if (result.status !== 0) {
 	process.exit(result.status ?? 1);
 }
 
-const payload = JSON.parse(result.stdout);
-if (!Array.isArray(payload) || payload.length !== 1 || !payload[0]?.filename) {
-	throw new Error("npm pack returned an unexpected result.");
+function normalizePackEntries(payload) {
+	if (Array.isArray(payload)) return payload;
+	if (!payload || typeof payload !== "object") return [];
+
+	// npm <=11 returns an array, while npm 12 returns an object keyed by
+	// package name. Also accept a direct result object so this stays tolerant
+	// of future single-package output changes.
+	if (typeof payload.filename === "string") return [payload];
+	return Object.values(payload);
 }
 
-const generatedPath = resolve(artifactDir, payload[0].filename);
+let payload;
+try {
+	payload = JSON.parse(result.stdout);
+} catch (error) {
+	throw new Error("npm pack returned invalid JSON.", { cause: error });
+}
+
+const entries = normalizePackEntries(payload).filter(
+	(entry) =>
+		entry &&
+		typeof entry === "object" &&
+		typeof entry.filename === "string" &&
+		entry.filename.length > 0,
+);
+
+if (entries.length !== 1) {
+	throw new Error(
+		`npm pack returned an unexpected result shape (${entries.length} package entries).`,
+	);
+}
+
+const packResult = entries[0];
+const generatedPath = resolve(artifactDir, packResult.filename);
 const tarballPath = resolve(artifactDir, "package.tgz");
 await rename(generatedPath, tarballPath);
 
@@ -45,7 +73,7 @@ await writeFile(
 );
 await writeFile(
 	resolve(artifactDir, "npm-pack.json"),
-	`${JSON.stringify(payload[0], null, 2)}\n`,
+	`${JSON.stringify(packResult, null, 2)}\n`,
 );
 await rm(stageDir, { recursive: true, force: true });
 
