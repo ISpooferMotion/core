@@ -35,8 +35,23 @@ function buttonNamed(name: string): HTMLButtonElement | null {
 async function clickAndFlush(button: HTMLButtonElement | null): Promise<void> {
 	await act(async () => {
 		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-		await new Promise((resolve) => setTimeout(resolve, 120));
+		await Promise.resolve();
 	});
+}
+
+async function waitForCondition(
+	condition: () => boolean,
+	timeoutMs = 1000,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (!condition()) {
+		if (Date.now() >= deadline) {
+			throw new Error("Timed out waiting for the expected React state.");
+		}
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		});
+	}
 }
 
 describe("ISMCoreErrorBoundary", () => {
@@ -55,9 +70,7 @@ describe("ISMCoreErrorBoundary", () => {
 	});
 
 	it("catches a thrown error and renders the fallback instead of crashing", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		const root = createTestRoot(container);
 		act(() => {
 			root.render(
@@ -75,9 +88,7 @@ describe("ISMCoreErrorBoundary", () => {
 	});
 
 	it("calls onError with the caught error and component stack", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		const onError = vi.fn();
 		const root = createTestRoot(container);
 		act(() => {
@@ -99,9 +110,7 @@ describe("ISMCoreErrorBoundary", () => {
 	});
 
 	it("contains a consumer onError hook that throws", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		const onDiagnostic = vi.fn();
 		const root = createTestRoot(container);
 		act(() => {
@@ -128,9 +137,7 @@ describe("ISMCoreErrorBoundary", () => {
 	});
 
 	it("falls back to Core's built-in error UI when a custom fallback throws", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		const onDiagnostic = vi.fn();
 		const root = createTestRoot(container);
 		act(() => {
@@ -157,9 +164,7 @@ describe("ISMCoreErrorBoundary", () => {
 	});
 
 	it("reports an immediate failed retry, then recovers when the child becomes safe", async () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		let shouldThrow = true;
 
 		function Wrapper() {
@@ -175,6 +180,10 @@ describe("ISMCoreErrorBoundary", () => {
 		expect(container.querySelector("[data-ism-error]")).not.toBeNull();
 
 		await clickAndFlush(buttonNamed("Try again"));
+		await waitForCondition(
+			() =>
+				container.querySelector("[data-ism-retry-state='failed']") !== null,
+		);
 		expect(container.textContent).toContain("Retry failed");
 		expect(document.activeElement).toBe(buttonNamed("Try again"));
 		expect(
@@ -184,6 +193,9 @@ describe("ISMCoreErrorBoundary", () => {
 
 		shouldThrow = false;
 		await clickAndFlush(buttonNamed("Try again"));
+		await waitForCondition(
+			() => container.querySelector("[data-ism-error]") === null,
+		);
 		expect(container.querySelector("[data-ism-error]")).toBeNull();
 		expect(container.textContent).toContain("fine");
 		consoleError.mockRestore();
@@ -349,9 +361,7 @@ describe("production-safe error disclosure", () => {
 
 	it("hides sensitive message and stack details when showErrorDetails is false", () => {
 		const root = createTestRoot(container);
-		const secretError = new Error(
-			"secret filesystem path C:/private/source.ts",
-		);
+		const secretError = new Error("secret filesystem path C:/private/source.ts");
 		act(() => {
 			root.render(
 				createElement(ErrorFallback, {
@@ -372,9 +382,7 @@ describe("production-safe error disclosure", () => {
 	});
 
 	it("emits the stable code carried by an ISMError", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 		const onDiagnostic = vi.fn();
 		const root = createTestRoot(container);
 		function ThrowsCoded(): never {

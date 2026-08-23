@@ -10,6 +10,22 @@ import { mountedRuntimes } from "../runtime";
 import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
 
 let container: HTMLDivElement;
+
+async function waitForCondition(
+	condition: () => boolean,
+	timeoutMs = 1000,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (!condition()) {
+		if (Date.now() >= deadline) {
+			throw new Error("Timed out waiting for the expected React state.");
+		}
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		});
+	}
+}
+
 beforeEach(() => {
 	delete (globalThis as unknown as Record<PropertyKey, unknown>)[
 		DEVTOOLS_PROTOCOL_SYMBOL
@@ -67,6 +83,7 @@ describe("DevTools", () => {
 			devRoot.render(createElement(DevApp));
 			await Promise.resolve();
 		});
+		await waitForCondition(() => getDevToolsProtocol() !== undefined);
 		expect(getDevToolsProtocol()).toBeDefined();
 	});
 	it("renders collapsed by default, showing only the open button", async () => {

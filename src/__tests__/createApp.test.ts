@@ -9,6 +9,21 @@ import { cleanupTestRoots, createTestRoot } from "./reactTestUtils";
 
 let container: HTMLDivElement;
 
+async function waitForCondition(
+	condition: () => boolean,
+	timeoutMs = 1000,
+): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	while (!condition()) {
+		if (Date.now() >= deadline) {
+			throw new Error("Timed out waiting for the expected React state.");
+		}
+		await act(async () => {
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		});
+	}
+}
+
 beforeEach(() => {
 	container = document.createElement("div");
 	document.body.appendChild(container);
@@ -508,6 +523,9 @@ describe("createApp", () => {
 				?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 			await Promise.resolve();
 		});
+		await waitForCondition(
+			() => observations.filter(Boolean).length === 2,
+		);
 
 		expect(observations.filter(Boolean)).toHaveLength(2);
 		expect(container.textContent).toContain("clicked committed");
@@ -531,6 +549,9 @@ describe("createApp", () => {
 		await act(async () => {
 			rootWith.render(createElement(AppWith));
 		});
+		await waitForCondition(
+			() => container.querySelector('[aria-label="Open DevTools"]') !== null,
+		);
 
 		expect(
 			container.querySelector('[aria-label="Open DevTools"]'),
@@ -706,7 +727,9 @@ describe("createApp diagnostics and production error handling", () => {
 		expect(fallback?.getAttribute("data-ism-error-code")).toBe(
 			"ISM_DRAW_ERROR",
 		);
-		expect(container.textContent).toContain("Something went wrong.");
+		expect(container.textContent).toContain(
+			"Core could not complete the current draw frame.",
+		);
 		expect(container.textContent).not.toContain("secret draw details");
 		expect(onDiagnostic).toHaveBeenCalledWith(
 			expect.objectContaining({ code: "ISM_DRAW_ERROR", level: "error" }),
