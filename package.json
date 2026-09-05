@@ -1,6 +1,6 @@
 {
 	"name": "@ispoofermotion/core",
-	"version": "4.1.0",
+	"version": "4.1.1",
 	"description": "Immediate-mode UI runtime for React, designed with Tauri applications in mind.",
 	"private": false,
 	"license": "MIT",

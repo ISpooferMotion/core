@@ -387,7 +387,7 @@ describe("ErrorFallback", () => {
 
 			expect(writeText).toHaveBeenCalledTimes(1);
 			const copied = writeText.mock.calls[0]?.[0] ?? "";
-			expect(copied).toContain("ISM Core 4.1.0");
+			expect(copied).toContain("ISM Core 4.1.1");
 			expect(copied).toContain("ISM_WIDGET_RENDER_ERROR");
 			expect(copied).not.toContain("secret path");
 		} finally {

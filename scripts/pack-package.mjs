@@ -21,7 +21,7 @@ const result = spawnSync(
 		"--pack-destination",
 		artifactDir,
 	],
-	{ encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
+	{ encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true },
 );
 
 if (result.status !== 0) {

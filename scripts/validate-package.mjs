@@ -10,7 +10,11 @@ const temp = await mkdtemp(resolve(tmpdir(), "ism-package-"));
 const extracted = resolve(temp, "package");
 
 function run(command, args, cwd = root) {
-	const result = spawnSync(command, args, { cwd, stdio: "inherit" });
+	const result = spawnSync(command, args, {
+		cwd,
+		stdio: "inherit",
+		shell: true,
+	});
 	if (result.status !== 0) process.exit(result.status ?? 1);
 }
 

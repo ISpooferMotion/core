@@ -10,7 +10,11 @@ const tarball = resolve(root, process.argv[2] ?? ".artifacts/package.tgz");
 const tempRoot = await mkdtemp(resolve(tmpdir(), "ism-consumers-"));
 
 function run(command, args, cwd) {
-	const result = spawnSync(command, args, { cwd, stdio: "inherit" });
+	const result = spawnSync(command, args, {
+		cwd,
+		stdio: "inherit",
+		shell: true,
+	});
 	if (result.status !== 0) process.exit(result.status ?? 1);
 }
 

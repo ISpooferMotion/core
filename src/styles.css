@@ -20,53 +20,48 @@
 
 .ism-error-action:focus-visible,
 .ism-error-details-summary:focus-visible {
-	outline: 2px solid #ededed;
+	outline: 1px solid #3a3a3a;
 	outline-offset: 2px;
 }
 
 .ism-error-action-primary {
-	background: #ededed;
-	border: 1px solid #ededed;
+	background: #1e1e1e;
+	border: none;
 	transition:
-		background-color 120ms ease,
-		border-color 120ms ease,
-		opacity 120ms ease,
+		background-color 100ms ease,
+		opacity 100ms ease,
 		transform 80ms ease;
 }
 
 .ism-error-action-primary:not(:disabled):hover {
-	background: #ffffff;
-	border-color: #ffffff;
+	background: #262626;
 }
 
 .ism-error-action-primary:not(:disabled):active {
 	transform: translateY(1px);
+	background: #1a1a1a;
 }
 
 .ism-error-action-secondary {
-	background: #111111;
-	border: 1px solid #2e2e2e;
-	transition:
-		background-color 120ms ease,
-		border-color 120ms ease,
-		opacity 120ms ease;
+	background: transparent;
+	border: none;
+	transition: color 100ms ease;
 }
 
 .ism-error-action-secondary:hover {
-	background: #1a1a1a;
-	border-color: #3a3a3a;
+	color: #888888;
 }
 
 .ism-error-action-secondary:active {
-	background: #202020;
+	color: #999999;
 }
 
 .ism-error-details-summary {
-	color: #a1a1a1;
+	color: #7a7a7a;
 }
 
 .ism-error-details-summary:hover {
-	color: #ededed;
+	color: #a1a1a1;
 }
 
 .ism-error-spinner {

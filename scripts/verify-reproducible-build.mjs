@@ -8,8 +8,17 @@ import { createPublishStage } from "./package-utils.mjs";
 const root = process.cwd();
 
 function run(command, args) {
-	const result = spawnSync(command, args, { cwd: root, stdio: "inherit" });
-	if (result.status !== 0) process.exit(result.status ?? 1);
+	const result = spawnSync(command, args, {
+		cwd: root,
+		stdio: "inherit",
+		shell: true,
+	});
+	if (result.status !== 0) {
+		console.error(
+			`Command ${command} ${args.join(" ")} failed with status ${result.status} (error: ${result.error?.message})`,
+		);
+		process.exit(result.status ?? 1);
+	}
 }
 
 async function walk(dir) {
@@ -51,9 +60,19 @@ async function packSnapshot(stageDir) {
 				"--pack-destination",
 				destination,
 			],
-			{ cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
+			{
+				cwd: root,
+				encoding: "utf8",
+				stdio: ["ignore", "pipe", "inherit"],
+				shell: true,
+			},
 		);
-		if (result.status !== 0) process.exit(result.status ?? 1);
+		if (result.status !== 0) {
+			console.error(
+				`npm pack failed with status ${result.status} (error: ${result.error?.message})`,
+			);
+			process.exit(result.status ?? 1);
+		}
 		const payload = JSON.parse(result.stdout)?.[0];
 		if (!payload?.filename)
 			throw new Error("npm pack returned an unexpected result.");
@@ -86,14 +105,28 @@ async function buildSnapshot() {
 	}
 }
 
-const first = await buildSnapshot();
-const second = await buildSnapshot();
+try {
+	const first = await buildSnapshot();
+	const second = await buildSnapshot();
 
-if (JSON.stringify(first) !== JSON.stringify(second)) {
-	console.error("Build/package manifest changed between clean builds.");
+	if (JSON.stringify(first) !== JSON.stringify(second)) {
+		console.error("Build/package manifest changed between clean builds.");
+		import("node:fs").then((fs) =>
+			fs.writeFileSync(
+				"repro-diff.json",
+				JSON.stringify({ first, second }, null, 2),
+			),
+		);
+		process.exit(1);
+	}
+
+	console.log(
+		`Reproducible build verified (${second.dist.length} dist files, ${second.pack.files.length} packed files, byte-identical tarball).`,
+	);
+} catch (e) {
+	console.error("Caught error:", e);
+	import("node:fs").then((fs) =>
+		fs.writeFileSync("repro-err.txt", String(e.stack || e)),
+	);
 	process.exit(1);
 }
-
-console.log(
-	`Reproducible build verified (${second.dist.length} dist files, ${second.pack.files.length} packed files, byte-identical tarball).`,
-);
