@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.1] - 2026-09-05
+
+### Fixed
+
+- Fixed packaging issues on Windows by enabling shell execution for package scripts, and refined the built-in error fallback UI styling for a cleaner, lower-contrast dark theme.
+
 ## [4.1.0] - 2026-08-23
 
 ### Added
@@ -16,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Switched back to using an npm token for release publishing instead of OIDC, and corrected repository metadata URLs.
 - Rebuilt the built-in error fallback around a compact Vercel-style neutral dark palette with a new Core error glyph, clearer hierarchy, `Error code` terminology, contextual recovery guidance, collapsed technical details, and a `Copy details` action.
 - Error recovery now shows a visible `Retrying...` state, detects immediate re-failures, reports them inline, prevents duplicate attempts while retrying, and returns keyboard focus to the retry action after a failed attempt.
 - DevTools now load as a real dynamic chunk and install their protocol only when the overlay mounts or a consumer explicitly calls `installDevToolsProtocol()` from the devtools subpath.
